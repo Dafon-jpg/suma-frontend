@@ -184,6 +184,8 @@
         "settings": "Ajustes",
         "showAmounts": "Mostrar montos",
         "hideAmounts": "Ocultar montos",
-        "spent": "gastado"
+        "spent": "gastado",
+        "anticipation": "¡Faltan {{days}} días para sumar tu ahorro de {{month}}! 🚀",
+        "diversification": "Diversificación de tus ahorros"
     }
 }

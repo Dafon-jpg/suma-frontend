@@ -184,6 +184,8 @@
         "settings": "Settings",
         "showAmounts": "Show amounts",
         "hideAmounts": "Hide amounts",
-        "spent": "spent"
+        "spent": "spent",
+        "anticipation": "Only {{days}} days left to add your {{month}} savings! 🚀",
+        "diversification": "Savings diversification"
     }
 }

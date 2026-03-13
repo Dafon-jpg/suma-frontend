@@ -12,7 +12,8 @@ import Image from "next/image"
 import { NewMovementModal } from "@/components/new-movement-modal"
 import { AnimatedTabs } from "@/components/ui/animated-tabs"
 import { SavingsBarChart } from "@/components/dashboard/savings-bar-chart"
-import { Eye, EyeOff, Search } from "lucide-react"
+import { SavingsPieChart } from "@/components/dashboard/savings-pie-chart"
+import { Eye, EyeOff, Search, TreePine } from "lucide-react"
 import { motion, MotionConfig, AnimatePresence } from "framer-motion"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -244,7 +245,7 @@ export default function DashboardPage() {
     return result
   }, [transactions, filterTypes, filterCategories, filterDateRange, searchQuery, selectedCategory, months, monthsShort])
 
-  // Monthly savings history for bar chart
+  // Monthly savings history for bar chart — includes current + 2 future months
   const monthlySavingsData = React.useMemo(() => {
     const filtered = allTransactions.filter(tx => {
       const c = tx.currency || "ARS"
@@ -258,11 +259,34 @@ export default function DashboardPage() {
     })
     const entries = Array.from(monthMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
     const last12 = entries.slice(-12)
-    return last12.map(([key, value]) => {
+    const result = last12.map(([key, value]) => {
       const [y, m] = key.split("-")
-      return { label: `${monthsShort[parseInt(m)]} ${y.slice(2)}`, value }
+      return { label: `${monthsShort[parseInt(m)]} ${y.slice(2)}`, value, isFuture: false }
     })
+    // Add current month if not present + 2 future months
+    const now = new Date()
+    for (let offset = 0; offset <= 2; offset++) {
+      const futureDate = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+      const fKey = `${futureDate.getFullYear()}-${String(futureDate.getMonth()).padStart(2, "0")}`
+      const fLabel = `${monthsShort[futureDate.getMonth()]} ${String(futureDate.getFullYear()).slice(2)}`
+      const existing = result.find(r => r.label === fLabel)
+      if (!existing && offset > 0) {
+        result.push({ label: fLabel, value: 0, isFuture: true })
+      } else if (!existing && offset === 0) {
+        result.push({ label: fLabel, value: 0, isFuture: false })
+      }
+    }
+    return result
   }, [allTransactions, selectedSavingsCurrency, monthsShort])
+
+  // Anticipation text: days until end of current month
+  const anticipationText = React.useMemo(() => {
+    const now = new Date()
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const daysLeft = endOfMonth.getDate() - now.getDate()
+    const nextMonthName = months[(now.getMonth() + 1) % 12]
+    return t("dashboard.anticipation", { days: daysLeft, month: nextMonthName })
+  }, [months, t])
 
   const savingsByCurrency = React.useMemo(() => {
     const map = new Map<string, number>()
@@ -272,6 +296,16 @@ export default function DashboardPage() {
     })
     return map
   }, [transactions])
+
+  // Pie chart data: savings diversification across currencies
+  const savingsPieData = React.useMemo(() => {
+    const PIE_COLORS = ["#2A87CF", "#60b5f7", "#93c5fd", "#1e6aa8", "#38bdf8", "#7dd3fc", "#0ea5e9", "#a5d8ff"]
+    const entries = Array.from(savingsByCurrency.entries()).filter(([, v]) => v > 0)
+    return entries.map(([code, value], i) => {
+      const cur = CURRENCY_LIST.find(c => c.code === code)
+      return { label: cur?.label || code, value, symbol: cur?.symbol || code, color: PIE_COLORS[i % PIE_COLORS.length] }
+    })
+  }, [savingsByCurrency])
 
   const activeCurrencies = React.useMemo(() => {
     const codes = new Set(savingsByCurrency.keys())
@@ -515,7 +549,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
               <TreePine className="h-4 w-4 text-suma-blue" /> {t("dashboard.monthlySavings")} — {CURRENCY_LIST.find(c => c.code === selectedSavingsCurrency)?.label}
             </h2>
-            <SavingsBarChart data={monthlySavingsData} privacyMode={privacyMode} currencySymbol={CURRENCY_LIST.find(c => c.code === selectedSavingsCurrency)?.symbol} />
+            <SavingsBarChart data={monthlySavingsData} privacyMode={privacyMode} currencySymbol={CURRENCY_LIST.find(c => c.code === selectedSavingsCurrency)?.symbol} anticipationText={anticipationText} />
           </div>
 
           {/* Savings Title + Currency Cards */}
@@ -544,6 +578,16 @@ export default function DashboardPage() {
               )
             })}
           </div>
+
+          {/* Diversification Pie Chart — only if 2+ currencies have balance */}
+          {savingsPieData.length >= 2 && (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+              <h2 className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">
+                {t("dashboard.diversification")}
+              </h2>
+              <SavingsPieChart slices={savingsPieData} privacyMode={privacyMode} />
+            </div>
+          )}
         </div>
       )}
 

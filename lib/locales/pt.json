@@ -184,6 +184,8 @@
         "settings": "Configurações",
         "showAmounts": "Mostrar valores",
         "hideAmounts": "Ocultar valores",
-        "spent": "gasto"
+        "spent": "gasto",
+        "anticipation": "Faltam {{days}} dias para adicionar suas economias de {{month}}! 🚀",
+        "diversification": "Diversificação das suas economias"
     }
 }
