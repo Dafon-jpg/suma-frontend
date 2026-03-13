@@ -472,6 +472,18 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
 
+          {/* Active category filter banner */}
+          {selectedCategory && (
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-suma-blue/10 border border-suma-blue/20">
+              <span className="text-sm font-medium text-suma-blue">
+                {t("table.movementsOf")} <strong>{selectedCategory}</strong>
+              </span>
+              <button onClick={() => setSelectedCategory(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-suma-blue text-white hover:bg-[#1e6aa8] transition-colors shadow-sm" title={t("table.clearFilter")}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          )}
+
           <div ref={tableRef} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden scroll-mt-24">
             <div className="max-h-[60vh] overflow-y-auto">
               {filteredTx.length > 0 ? filteredTx.map(tx => <div key={tx.id}>{renderTxRow(tx)}</div>) : (
